@@ -50,7 +50,16 @@
 
 
 // Wylogowanie
-document.getElementById("logoutBtn").onclick = logout;
+function logout() {
+    // Wyczyść dane logowania (jeśli używasz localStorage)
+    localStorage.removeItem("userEmail");
+    localStorage.removeItem("userRole");
+
+    // Przekieruj na stronę logowania
+    window.location.href = "login.html";
+}
+
+    document.getElementById("logoutBtn").onclick = logout;
 
 // Ładowanie wspólnot
 async function loadCommunities() {

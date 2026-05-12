@@ -137,10 +137,17 @@ document.getElementById("communityForm").addEventListener("submit", async (e) =>
 // ---------------------------------------------
 // OCZEKUJĄCY MIESZKAŃCY
 // ---------------------------------------------
+// ---------------------------------------------
+// OCZEKUJĄCY MIESZKAŃCY – wersja z nazwą wspólnoty
+// ---------------------------------------------
 async function loadPendingResidents() {
     const { data, error } = await client
         .from("users")
-        .select("id, login, wspolnota")
+        .select(`
+            id,
+            login,
+            communities(name)
+        `)
         .eq("approved", false);
 
     const tbody = document.querySelector("#pendingTable tbody");
@@ -148,6 +155,7 @@ async function loadPendingResidents() {
 
     if (error) {
         tbody.innerHTML = "<tr><td colspan='3'>Błąd ładowania.</td></tr>";
+        console.error("Błąd Supabase:", error);
         return;
     }
 
@@ -157,11 +165,12 @@ async function loadPendingResidents() {
     }
 
     data.forEach(user => {
+        const wspolnota = user.communities?.name || "—";
         const row = document.createElement("tr");
         row.className = "pro-row";
         row.innerHTML = `
             <td>${user.login}</td>
-            <td>${user.wspolnota}</td>
+            <td>${wspolnota}</td>
             <td>
                 <button class="uh-btn uh-btn-small uh-btn-gold pro-btn-small" onclick="approveUser(${user.id})">
                     Zatwierdź
@@ -172,19 +181,6 @@ async function loadPendingResidents() {
     });
 }
 
-async function approveUser(id) {
-    const { error } = await client
-        .from("users")
-        .update({ approved: true })
-        .eq("id", id);
-
-    if (error) {
-        alert("Nie udało się zatwierdzić użytkownika.");
-        return;
-    }
-
-    loadPendingResidents();
-}
 
 
 // ---------------------------------------------

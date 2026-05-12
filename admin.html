@@ -5,11 +5,13 @@
     <title>Panel administratora – Unity House</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+    <!-- STYLE -->
     <link rel="stylesheet" href="base.css">
     <link rel="stylesheet" href="layout.css">
     <link rel="stylesheet" href="components.css">
     <link rel="stylesheet" href="admin.css">
 
+    <!-- SUPABASE + SYSTEM -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="system.js"></script>
 </head>
@@ -26,240 +28,56 @@
 
 <main class="uh-main panel pro-panel">
 
-    <!-- SEKCJA 1 — WSPÓLNOTY -->
-    <section class="panel-section pro-section">
-        <h2 class="pro-section-title">Wspólnoty mieszkaniowe</h2>
-
-        <form id="communityForm" class="inline-form pro-inline-form">
-            <input type="text" id="communityName" placeholder="Nazwa" required class="pro-input">
-            <input type="text" id="communityAddress" placeholder="Adres" required class="pro-input">
-            <button class="uh-btn uh-btn-gold pro-btn">Dodaj</button>
-        </form>
-
-        <div id="communitiesList" class="list pro-list"></div>
-    </section>
-
-
-    <!-- SEKCJA 2 — OCZEKUJĄCY MIESZKAŃCY -->
-    <section class="panel-section pro-section">
-        <h2 class="pro-section-title">Oczekujący mieszkańcy</h2>
-
-        <table id="pendingTable" class="uh-table pro-table">
-            <thead>
-                <tr>
-                    <th>Login</th>
-                    <th>Wspólnota</th>
-                    <th>Akcja</th>
-                </tr>
-            </thead>
-            <tbody></tbody>
-        </table>
-    </section>
-
-
-    <!-- SEKCJA 3 — ZGŁOSZENIA -->
+    <!-- SEKCJA ZGŁOSZEŃ -->
     <section class="panel-section pro-section">
         <h2 class="pro-section-title">Zgłoszenia mieszkańców</h2>
-        <div id="adminTicketsList" class="tickets-list pro-tickets"></div>
+        <div id="ticketsList" class="tickets-list pro-tickets"></div>
     </section>
 
 </main>
 
-<script>
-// ---------------------------------------------
-// WYLOGOWANIE
-// ---------------------------------------------
-function logout() {
+<style>
+/* Wyszarzone zakończone zgłoszenia */
+.ticket-card.completed {
+    opacity: 0.45;
+    filter: grayscale(100%);
+    pointer-events: none;
+}
+</style>
+
+<script defer>
+
+/* ---------------------------------------------
+   WYLOGOWANIE
+--------------------------------------------- */
+document.getElementById("logoutBtn").onclick = () => {
     localStorage.clear();
     window.location.href = "login.html";
-}
-document.getElementById("logoutBtn").onclick = logout;
+};
 
-
-// ---------------------------------------------
-// ŁADOWANIE WSPÓLNOT
-// ---------------------------------------------
-async function loadCommunities() {
-    const { data, error } = await client
-        .from("communities")
-        .select("*")
-        .order("name", { ascending: true });
-
-    const container = document.getElementById("communitiesList");
-    container.innerHTML = "";
-
-    if (error) {
-        container.textContent = "Błąd ładowania wspólnot.";
-        return;
-    }
-
-    if (!data.length) {
-        container.textContent = "Brak dodanych wspólnot.";
-        return;
-    }
-
-    data.forEach(c => {
-        const div = document.createElement("div");
-        div.className = "list-item pro-list-item";
-        div.textContent = `${c.name} – ${c.address}`;
-        container.appendChild(div);
-    });
-}
-
-
-// ---------------------------------------------
-// DODAWANIE WSPÓLNOTY
-// ---------------------------------------------
-document.getElementById("communityForm").addEventListener("submit", async (e) => {
-    e.preventDefault();
-
-    const name = communityName.value.trim();
-    const address = communityAddress.value.trim();
-
-    if (!name || !address) return;
-
-    const { error } = await client
-        .from("communities")
-        .insert({ name, address });
-
-    if (error) {
-        alert("Nie udało się dodać wspólnoty.");
-        return;
-    }
-
-    communityName.value = "";
-    communityAddress.value = "";
-    loadCommunities();
-});
-
-
-// ---------------------------------------------
-// OCZEKUJĄCY MIESZKAŃCY
-// ---------------------------------------------
-async function loadPendingResidents() {
-    const { data, error } = await client
-        .from("users")
-        .select(`
-            id,
-            login,
-            wspolnota,
-            communities:communities(name)
-        `)
-        .eq("approved", false);
-
-    const tbody = document.querySelector("#pendingTable tbody");
-    tbody.innerHTML = "";
-
-    if (error) {
-        console.error("Błąd Supabase:", error);
-        tbody.innerHTML = "<tr><td colspan='3'>Błąd ładowania.</td></tr>";
-        return;
-    }
-
-    if (!data.length) {
-        tbody.innerHTML = "<tr><td colspan='3'>Brak oczekujących mieszkańców.</td></tr>";
-        return;
-    }
-
-    data.forEach(user => {
-        const wspolnotaNazwa = user.communities?.name || "—";
-
-        const row = document.createElement("tr");
-        row.className = "pro-row";
-        row.innerHTML = `
-            <td>${user.login}</td>
-            <td>${wspolnotaNazwa}</td>
-            <td>
-                <button class="uh-btn uh-btn-small uh-btn-gold pro-btn-small zatwierdz" data-id="${user.id}">
-                    Zatwierdź
-                </button>
-                <button class="uh-btn uh-btn-small pro-btn-small odrzuc" data-id="${user.id}">
-                    Odrzuć
-                </button>
-            </td>
-        `;
-        tbody.appendChild(row);
-    });
-
-    // OBSŁUGA ZATWIERDZANIA
-    tbody.querySelectorAll(".zatwierdz").forEach(btn => {
-        btn.addEventListener("click", () => approveUser(btn.dataset.id));
-    });
-
-    // OBSŁUGA ODRZUCANIA
-    tbody.querySelectorAll(".odrzuc").forEach(btn => {
-        btn.addEventListener("click", () => rejectUser(btn.dataset.id));
-    });
-}
-
-
-// ---------------------------------------------
-// ZATWIERDZANIE UŻYTKOWNIKA (z logami)
-// ---------------------------------------------
-async function approveUser(userId) {
-    console.log("Zatwierdzam ID:", userId);
-
-    const { data, error } = await client
-        .from("users")
-        .update({ approved: true })
-        .eq("id", userId)
-        .select();
-
-    console.log("Supabase update result:", { data, error });
-
-    if (error) {
-        alert("Błąd zatwierdzania: " + error.message);
-        return;
-    }
-
-    if (data && data.length > 0) {
-        alert("Użytkownik został zatwierdzony.");
-    } else {
-        alert("Brak danych — Supabase nie zwrócił żadnego rekordu.");
-    }
-
-    loadPendingResidents();
-}
-
-
-// ---------------------------------------------
-// ODRZUCANIE UŻYTKOWNIKA (z logami)
-// ---------------------------------------------
-async function rejectUser(userId) {
-    console.log("Odrzucam ID:", userId);
-
-    const { data, error } = await client
-        .from("users")
-        .delete()
-        .eq("id", userId)
-        .select();
-
-    console.log("Supabase delete result:", { data, error });
-
-    if (error) {
-        alert("Błąd odrzucania: " + error.message);
-        return;
-    }
-
-    alert("Użytkownik został odrzucony i usunięty.");
-    loadPendingResidents();
-}
-
-
-// ---------------------------------------------
-// ZGŁOSZENIA
-// ---------------------------------------------
-async function loadAdminTickets() {
+/* ---------------------------------------------
+   ŁADOWANIE ZGŁOSZEŃ
+--------------------------------------------- */
+async function loadTickets() {
     const { data, error } = await client
         .from("tickets")
-        .select("*")
+        .select(`
+            id,
+            title,
+            description,
+            priority,
+            status,
+            created_at,
+            users ( login, wspolnota )
+        `)
         .order("created_at", { ascending: false });
 
-    const container = document.getElementById("adminTicketsList");
+    const container = document.getElementById("ticketsList");
     container.innerHTML = "";
 
     if (error) {
         container.textContent = "Błąd ładowania zgłoszeń.";
+        console.error(error);
         return;
     }
 
@@ -270,46 +88,43 @@ async function loadAdminTickets() {
 
     data.forEach(t => {
         const div = document.createElement("div");
-        div.className = "ticket-card pro-ticket-card";
+        div.className = "ticket-card pro-ticket-card" + (t.status === "zakończone" ? " completed" : "");
+
         div.innerHTML = `
             <h3>${t.title}</h3>
             <p>${t.description}</p>
+
+            <p><strong>Mieszkaniec:</strong> ${t.users?.login ?? "nieznany"}</p>
+            <p><strong>Wspólnota:</strong> ${t.users?.wspolnota ?? "nieznana"}</p>
+
             <span class="ticket-status pro-status">Status: ${t.status}</span>
-            <div class="pro-ticket-actions">
-                <button data-id="${t.id}" data-status="w trakcie" class="uh-btn uh-btn-small pro-btn-small">W trakcie</button>
-                <button data-id="${t.id}" data-status="zakończone" class="uh-btn uh-btn-small uh-btn-gold pro-btn-small">Zakończ</button>
-            </div>
+            <span class="ticket-priority pro-priority">Priorytet: ${t.priority}</span>
+
+            ${t.status !== "zakończone" ? `<button class="finish-btn uh-btn uh-btn-gold">Zakończ</button>` : ""}
         `;
+
+        // Obsługa przycisku "Zakończ"
+        const finishBtn = div.querySelector(".finish-btn");
+        if (finishBtn) {
+            finishBtn.onclick = async () => {
+                await client
+                    .from("tickets")
+                    .update({ status: "zakończone" })
+                    .eq("id", t.id);
+
+                div.classList.add("completed");
+                finishBtn.remove();
+            };
+        }
+
         container.appendChild(div);
-    });
-
-    container.querySelectorAll("button[data-id]").forEach(btn => {
-        btn.addEventListener("click", async () => {
-            const id = btn.getAttribute("data-id");
-            const status = btn.getAttribute("data-status");
-
-            const { error } = await client
-                .from("tickets")
-                .update({ status })
-                .eq("id", id);
-
-            if (error) {
-                alert("Nie udało się zmienić statusu.");
-                return;
-            }
-
-            loadAdminTickets();
-        });
     });
 }
 
-
-// ---------------------------------------------
-// START
-// ---------------------------------------------
-loadCommunities();
-loadPendingResidents();
-loadAdminTickets();
+/* ---------------------------------------------
+   START
+--------------------------------------------- */
+loadTickets();
 
 </script>
 

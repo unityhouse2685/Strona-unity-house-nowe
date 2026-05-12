@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="pl">
 <head>
@@ -16,52 +17,69 @@
 
 <body class="uh-body">
 
-<header class="uh-topbar">
-    <div class="uh-logo">Unity House</div>
+<header class="uh-topbar pro-topbar">
+    <div class="uh-logo pro-logo">Unity House</div>
     <nav class="uh-nav">
-        <span class="uh-nav-label">Panel administratora</span>
-        <button id="logoutBtn" class="uh-btn uh-btn-outline">Wyloguj</button>
+        <span class="uh-nav-label pro-nav-label">Panel administratora</span>
+        <button id="logoutBtn" class="uh-btn uh-btn-outline pro-logout">Wyloguj</button>
     </nav>
 </header>
 
-<main class="uh-main panel">
+<main class="uh-main panel pro-panel">
 
-    <section class="panel-section">
-        <h2>Wspólnoty mieszkaniowe</h2>
+    <!-- SEKCJA 1 — WSPÓLNOTY -->
+    <section class="panel-section pro-section">
+        <h2 class="pro-section-title">Wspólnoty mieszkaniowe</h2>
 
-        <form id="communityForm" class="inline-form">
-            <input type="text" id="communityName" placeholder="Nazwa" required>
-            <input type="text" id="communityAddress" placeholder="Adres" required>
-            <button class="uh-btn uh-btn-gold">Dodaj</button>
+        <form id="communityForm" class="inline-form pro-inline-form">
+            <input type="text" id="communityName" placeholder="Nazwa" required class="pro-input">
+            <input type="text" id="communityAddress" placeholder="Adres" required class="pro-input">
+            <button class="uh-btn uh-btn-gold pro-btn">Dodaj</button>
         </form>
 
-        <div id="communitiesList" class="list"></div>
+        <div id="communitiesList" class="list pro-list"></div>
     </section>
 
-    <section class="panel-section">
-        <h2>Zgłoszenia mieszkańców</h2>
-        <div id="adminTicketsList" class="tickets-list"></div>
+
+    <!-- SEKCJA 2 — OCZEKUJĄCY MIESZKAŃCY -->
+    <section class="panel-section pro-section">
+        <h2 class="pro-section-title">Oczekujący mieszkańcy</h2>
+
+        <table id="pendingTable" class="uh-table pro-table">
+            <thead>
+                <tr>
+                    <th>Login</th>
+                    <th>Wspólnota</th>
+                    <th>Akcja</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </section>
+
+
+    <!-- SEKCJA 3 — ZGŁOSZENIA -->
+    <section class="panel-section pro-section">
+        <h2 class="pro-section-title">Zgłoszenia mieszkańców</h2>
+        <div id="adminTicketsList" class="tickets-list pro-tickets"></div>
     </section>
 
 </main>
 
 <script>
-// Wymagamy roli administratora
-
-
-// Wylogowanie
+// ---------------------------------------------
+// WYLOGOWANIE
+// ---------------------------------------------
 function logout() {
-    // Wyczyść dane logowania (jeśli używasz localStorage)
-    localStorage.removeItem("userEmail");
-    localStorage.removeItem("userRole");
-
-    // Przekieruj na stronę logowania
+    localStorage.clear();
     window.location.href = "login.html";
 }
+document.getElementById("logoutBtn").onclick = logout;
 
-    document.getElementById("logoutBtn").onclick = logout;
 
-// Ładowanie wspólnot
+// ---------------------------------------------
+// ŁADOWANIE WSPÓLNOT
+// ---------------------------------------------
 async function loadCommunities() {
     const { data, error } = await client
         .from("communities")
@@ -83,13 +101,16 @@ async function loadCommunities() {
 
     data.forEach(c => {
         const div = document.createElement("div");
-        div.className = "list-item";
+        div.className = "list-item pro-list-item";
         div.textContent = `${c.name} – ${c.address}`;
         container.appendChild(div);
     });
 }
 
-// Dodawanie wspólnoty
+
+// ---------------------------------------------
+// DODAWANIE WSPÓLNOTY
+// ---------------------------------------------
 document.getElementById("communityForm").addEventListener("submit", async (e) => {
     e.preventDefault();
 
@@ -112,7 +133,63 @@ document.getElementById("communityForm").addEventListener("submit", async (e) =>
     loadCommunities();
 });
 
-// Ładowanie zgłoszeń
+
+// ---------------------------------------------
+// OCZEKUJĄCY MIESZKAŃCY
+// ---------------------------------------------
+async function loadPendingResidents() {
+    const { data, error } = await client
+        .from("users")
+        .select("id, login, wspolnota")
+        .eq("approved", false);
+
+    const tbody = document.querySelector("#pendingTable tbody");
+    tbody.innerHTML = "";
+
+    if (error) {
+        tbody.innerHTML = "<tr><td colspan='3'>Błąd ładowania.</td></tr>";
+        return;
+    }
+
+    if (!data.length) {
+        tbody.innerHTML = "<tr><td colspan='3'>Brak oczekujących mieszkańców.</td></tr>";
+        return;
+    }
+
+    data.forEach(user => {
+        const row = document.createElement("tr");
+        row.className = "pro-row";
+        row.innerHTML = `
+            <td>${user.login}</td>
+            <td>${user.wspolnota}</td>
+            <td>
+                <button class="uh-btn uh-btn-small uh-btn-gold pro-btn-small" onclick="approveUser(${user.id})">
+                    Zatwierdź
+                </button>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+async function approveUser(id) {
+    const { error } = await client
+        .from("users")
+        .update({ approved: true })
+        .eq("id", id);
+
+    if (error) {
+        alert("Nie udało się zatwierdzić użytkownika.");
+        return;
+    }
+
+    loadPendingResidents();
+}
+
+
+// ---------------------------------------------
+// ZGŁOSZENIA
+// ---------------------------------------------
 async function loadAdminTickets() {
     const { data, error } = await client
         .from("tickets")
@@ -134,20 +211,19 @@ async function loadAdminTickets() {
 
     data.forEach(t => {
         const div = document.createElement("div");
-        div.className = "ticket-card";
+        div.className = "ticket-card pro-ticket-card";
         div.innerHTML = `
             <h3>${t.title}</h3>
             <p>${t.description}</p>
-            <span class="ticket-status">Status: ${t.status}</span>
-            <div style="margin-top:8px; display:flex; gap:8px;">
-                <button data-id="${t.id}" data-status="w trakcie" class="uh-btn uh-btn-small">W trakcie</button>
-                <button data-id="${t.id}" data-status="zakończone" class="uh-btn uh-btn-small uh-btn-gold">Zakończ</button>
+            <span class="ticket-status pro-status">Status: ${t.status}</span>
+            <div class="pro-ticket-actions">
+                <button data-id="${t.id}" data-status="w trakcie" class="uh-btn uh-btn-small pro-btn-small">W trakcie</button>
+                <button data-id="${t.id}" data-status="zakończone" class="uh-btn uh-btn-small uh-btn-gold pro-btn-small">Zakończ</button>
             </div>
         `;
         container.appendChild(div);
     });
 
-    // Obsługa zmiany statusu
     container.querySelectorAll("button[data-id]").forEach(btn => {
         btn.addEventListener("click", async () => {
             const id = btn.getAttribute("data-id");
@@ -168,8 +244,14 @@ async function loadAdminTickets() {
     });
 }
 
+
+// ---------------------------------------------
+// START
+// ---------------------------------------------
 loadCommunities();
+loadPendingResidents();
 loadAdminTickets();
+
 </script>
 
 </body>

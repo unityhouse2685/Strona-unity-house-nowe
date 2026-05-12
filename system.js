@@ -57,6 +57,7 @@ document.addEventListener("DOMContentLoaded", () => {
     .select("*")
     .eq("login", email)
     .eq("password", password)
+    .eq("approved", true)
     .single();
 
 
@@ -100,3 +101,47 @@ function logout() {
     localStorage.clear();
     window.location.href = "login.html";
 }
+// -----------------------------------------
+// REJESTRACJA NOWEGO MIESZKAŃCA
+// -----------------------------------------
+
+document.addEventListener("DOMContentLoaded", () => {
+    const registerForm = document.getElementById("registerForm");
+
+    if (registerForm) {
+        registerForm.addEventListener("submit", async (e) => {
+            e.preventDefault();
+
+            const login = document.getElementById("emailInput").value.trim();
+            const password = document.getElementById("passwordInput").value.trim();
+            const wspolnota = document.getElementById("communitySelect").value;
+
+            if (!login || !password || !wspolnota) {
+                alert("Uzupełnij wszystkie pola.");
+                return;
+            }
+
+            // Zapis do tabeli "users"
+            const { error } = await client
+                .from("users")
+                .insert([
+                    {
+                        login: login,
+                        password: password,
+                        wspolnota: wspolnota,
+                        role: "resident",
+                        approved: false
+                    }
+                ]);
+
+            if (error) {
+                console.error("Błąd rejestracji:", error);
+                alert("Nie udało się utworzyć konta.");
+                return;
+            }
+
+            alert("Konto zostało utworzone. Administrator musi je zatwierdzić przed pierwszym logowaniem.");
+            window.location.href = "login.html";
+        });
+    }
+});

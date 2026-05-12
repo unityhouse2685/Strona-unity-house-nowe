@@ -28,6 +28,21 @@
 
 <main class="uh-main panel pro-panel">
 
+    <!-- SEKCJA WSPÓLNOT -->
+    <section class="panel-section pro-section">
+        <h2 class="pro-section-title">Wspólnoty mieszkaniowe</h2>
+
+        <div id="communitiesList" class="communities-list pro-communities"></div>
+
+        <div class="add-community-box">
+            <h3>Dodaj nową wspólnotę</h3>
+            <input id="newCommunityName" class="uh-input" placeholder="Nazwa wspólnoty">
+            <button id="addCommunityBtn" class="uh-btn uh-btn-gold">Dodaj</button>
+        </div>
+    </section>
+
+    <hr class="pro-divider">
+
     <!-- SEKCJA ZGŁOSZEŃ -->
     <section class="panel-section pro-section">
         <h2 class="pro-section-title">Zgłoszenia mieszkańców</h2>
@@ -53,6 +68,54 @@
 document.getElementById("logoutBtn").onclick = () => {
     localStorage.clear();
     window.location.href = "login.html";
+};
+
+/* ---------------------------------------------
+   ŁADOWANIE WSPÓLNOT
+--------------------------------------------- */
+async function loadCommunities() {
+    console.log("Ładowanie wspólnot...");
+
+    const { data, error } = await client
+        .from("communities")
+        .select("*")
+        .order("created_at", { ascending: true });
+
+    const box = document.getElementById("communitiesList");
+    box.innerHTML = "";
+
+    if (error) {
+        box.textContent = "Błąd ładowania wspólnot.";
+        console.error(error);
+        return;
+    }
+
+    data.forEach(c => {
+        const div = document.createElement("div");
+        div.className = "community-card pro-community-card";
+
+        div.innerHTML = `
+            <span>${c.name}</span>
+            <button class="uh-btn uh-btn-outline delete-btn">Usuń</button>
+        `;
+
+        div.querySelector(".delete-btn").onclick = async () => {
+            await client.from("communities").delete().eq("id", c.id);
+            loadCommunities();
+        };
+
+        box.appendChild(div);
+    });
+}
+
+/* Dodawanie wspólnoty */
+document.getElementById("addCommunityBtn").onclick = async () => {
+    const name = document.getElementById("newCommunityName").value.trim();
+    if (!name) return;
+
+    await client.from("communities").insert({ name });
+    document.getElementById("newCommunityName").value = "";
+    loadCommunities();
 };
 
 /* ---------------------------------------------
@@ -103,7 +166,6 @@ async function loadTickets() {
             ${t.status !== "zakończone" ? `<button class="finish-btn uh-btn uh-btn-gold">Zakończ</button>` : ""}
         `;
 
-        // Obsługa przycisku "Zakończ"
         const finishBtn = div.querySelector(".finish-btn");
         if (finishBtn) {
             finishBtn.onclick = async () => {
@@ -124,6 +186,7 @@ async function loadTickets() {
 /* ---------------------------------------------
    START
 --------------------------------------------- */
+loadCommunities();
 loadTickets();
 
 </script>

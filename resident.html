@@ -66,12 +66,12 @@
 </main>
 
 <script defer>
+
 /* ---------------------------------------------
    WYLOGOWANIE
 --------------------------------------------- */
 document.getElementById("logoutBtn").onclick = () => {
-    localStorage.clear();
-    window.location.href = "login.html";
+    logout();
 };
 
 /* ---------------------------------------------
@@ -93,23 +93,15 @@ async function loadResidentInfo() {
         return;
     }
 
-    const { data: wspolnotaData, error: wspError } = await client
+    const { data: wspolnotaData } = await client
         .from("communities")
         .select("name")
         .eq("id", userData.wspolnota)
         .single();
 
-    if (wspError || !wspolnotaData) {
-        box.innerHTML = `
-            <p><strong>Login:</strong> ${userData.login}</p>
-            <p><strong>Wspólnota:</strong> (nieznana)</p>
-        `;
-        return;
-    }
-
     box.innerHTML = `
         <p><strong>Login:</strong> ${userData.login}</p>
-        <p><strong>Wspólnota:</strong> ${wspolnotaData.name}</p>
+        <p><strong>Wspólnota:</strong> ${wspolnotaData?.name ?? "(nieznana)"}</p>
     `;
 }
 
@@ -146,13 +138,12 @@ document.getElementById("ticketForm").addEventListener("submit", async (e) => {
 
     const ticketId = ticketData.id;
 
-    // 2. Upload plików — WERSJA POPRAWNA DLA SUPABASE v2
+    // 2. Upload plików — poprawna wersja Supabase v2
     const files = document.getElementById("ticketFiles").files;
 
     for (const file of files) {
         const path = `${ticketId}/${file.name}`;
 
-        // Upload z upsert
         const { error: uploadError } = await client.storage
             .from("tickets-files")
             .upload(path, file, { upsert: true });
@@ -162,14 +153,12 @@ document.getElementById("ticketForm").addEventListener("submit", async (e) => {
             continue;
         }
 
-        // Pobranie publicznego URL — poprawne w Supabase v2
         const { data: urlData } = client.storage
             .from("tickets-files")
             .getPublicUrl(path);
 
         const publicUrl = urlData.publicUrl;
 
-        // Zapis do tabeli tickets_files
         const { error: insertError } = await client
             .from("tickets_files")
             .insert({
@@ -236,6 +225,7 @@ async function loadMyTickets() {
 --------------------------------------------- */
 loadResidentInfo();
 loadMyTickets();
+
 </script>
 
 </body>

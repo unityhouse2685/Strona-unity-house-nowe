@@ -13,7 +13,7 @@
 
     <!-- SUPABASE + SYSTEM -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="system.js"></script> <!-- USUNIĘTO defer -->
+    <script src="system.js"></script> <!-- bez defer -->
 </head>
 
 <body class="uh-body">
@@ -75,9 +75,10 @@ document.getElementById("logoutBtn").onclick = () => {
    ŁADOWANIE DANYCH MIESZKAŃCA
 --------------------------------------------- */
 async function loadResidentInfo() {
-    const userId = localStorage.getItem("uh_user_id");  /* POPRAWIONE */
+    const userId = localStorage.getItem("uh_user_id");
 
-    const { data, error } = await client
+    // Pobranie danych użytkownika
+    const { data: userData, error: userError } = await client
         .from("users")
         .select("login, wspolnota")
         .eq("id", userId)
@@ -85,14 +86,29 @@ async function loadResidentInfo() {
 
     const box = document.getElementById("residentInfo");
 
-    if (error) {
-        box.textContent = "Błąd ładowania danych.";
+    if (userError || !userData) {
+        box.textContent = "Błąd ładowania danych użytkownika.";
+        return;
+    }
+
+    // Pobranie nazwy wspólnoty
+    const { data: wspolnotaData, error: wspError } = await client
+        .from("communities")
+        .select("name")
+        .eq("id", userData.wspolnota)
+        .single();
+
+    if (wspError || !wspolnotaData) {
+        box.innerHTML = `
+            <p><strong>Login:</strong> ${userData.login}</p>
+            <p><strong>Wspólnota:</strong> (nieznana)</p>
+        `;
         return;
     }
 
     box.innerHTML = `
-        <p><strong>Login:</strong> ${data.login}</p>
-        <p><strong>Wspólnota:</strong> ${data.wspolnota}</p>
+        <p><strong>Login:</strong> ${userData.login}</p>
+        <p><strong>Wspólnota:</strong> ${wspolnotaData.name}</p>
     `;
 }
 
@@ -102,7 +118,7 @@ async function loadResidentInfo() {
 document.getElementById("ticketForm").addEventListener("submit", async (e) => {
     e.preventDefault();
 
-    const userId = localStorage.getItem("uh_user_id"); /* POPRAWIONE */
+    const userId = localStorage.getItem("uh_user_id");
 
     const title = ticketTitle.value.trim();
     const description = ticketDescription.value.trim();
@@ -120,6 +136,7 @@ document.getElementById("ticketForm").addEventListener("submit", async (e) => {
 
     if (error) {
         alert("Nie udało się wysłać zgłoszenia.");
+        console.error(error);
         return;
     }
 
@@ -134,7 +151,7 @@ document.getElementById("ticketForm").addEventListener("submit", async (e) => {
    ŁADOWANIE ZGŁOSZEŃ MIESZKAŃCA
 --------------------------------------------- */
 async function loadMyTickets() {
-    const userId = localStorage.getItem("uh_user_id"); /* POPRAWIONE */
+    const userId = localStorage.getItem("uh_user_id");
 
     const { data, error } = await client
         .from("tickets")
@@ -147,6 +164,7 @@ async function loadMyTickets() {
 
     if (error) {
         container.textContent = "Błąd ładowania zgłoszeń.";
+        console.error(error);
         return;
     }
 

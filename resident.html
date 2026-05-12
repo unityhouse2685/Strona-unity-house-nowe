@@ -13,7 +13,7 @@
 
     <!-- SUPABASE + SYSTEM -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="system.js"></script> <!-- bez defer -->
+    <script src="system.js"></script>
 </head>
 
 <body class="uh-body">
@@ -50,7 +50,6 @@
                 <option value="wysoki">Wysoki</option>
             </select>
 
-            <!-- NOWE: ZAŁĄCZNIKI -->
             <label class="pro-label">Załączniki (opcjonalnie):</label>
             <input type="file" id="ticketFiles" multiple class="pro-input">
 
@@ -115,7 +114,7 @@ async function loadResidentInfo() {
 }
 
 /* ---------------------------------------------
-   WYSYŁANIE ZGŁOSZENIA + UPLOAD PLIKÓW
+   WYSYŁANIE ZGŁOSZENIA + POPRAWIONY UPLOAD
 --------------------------------------------- */
 document.getElementById("ticketForm").addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -126,7 +125,7 @@ document.getElementById("ticketForm").addEventListener("submit", async (e) => {
     const description = ticketDescription.value.trim();
     const priority = ticketPriority.value;
 
-    // 1. Tworzymy zgłoszenie i pobieramy jego ID
+    // 1. Tworzymy zgłoszenie
     const { data: ticketData, error: ticketError } = await client
         .from("tickets")
         .insert({
@@ -147,30 +146,41 @@ document.getElementById("ticketForm").addEventListener("submit", async (e) => {
 
     const ticketId = ticketData.id;
 
-    // 2. Upload plików
+    // 2. Upload plików — WERSJA POPRAWNA DLA SUPABASE v2
     const files = document.getElementById("ticketFiles").files;
 
     for (const file of files) {
         const path = `${ticketId}/${file.name}`;
 
+        // Upload z upsert
         const { error: uploadError } = await client.storage
             .from("tickets-files")
-            .upload(path, file);
+            .upload(path, file, { upsert: true });
 
         if (uploadError) {
             console.error("Błąd uploadu:", uploadError);
             continue;
         }
 
-        const publicUrl = client.storage
+        // Pobranie publicznego URL — poprawne w Supabase v2
+        const { data: urlData } = client.storage
             .from("tickets-files")
-            .getPublicUrl(path).data.publicUrl;
+            .getPublicUrl(path);
 
-        await client.from("tickets_files").insert({
-            ticket_id: ticketId,
-            file_url: publicUrl,
-            file_name: file.name
-        });
+        const publicUrl = urlData.publicUrl;
+
+        // Zapis do tabeli tickets_files
+        const { error: insertError } = await client
+            .from("tickets_files")
+            .insert({
+                ticket_id: ticketId,
+                file_url: publicUrl,
+                file_name: file.name
+            });
+
+        if (insertError) {
+            console.error("Błąd INSERT do tickets_files:", insertError);
+        }
     }
 
     // 3. Reset formularza

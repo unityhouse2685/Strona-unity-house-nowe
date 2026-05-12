@@ -28,11 +28,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
             // Pobieramy użytkownika z tabeli "users"
             const { data, error } = await client
-                .from("users")
-                .select("*")
-                .eq("email", email)
-                .eq("password", password)
-                .single();
+    .from("users")
+    .select("*")
+    .eq("login", email)
+    .eq("password", password)
+    .single();
+
 
             if (error || !data) {
                 alert("Nieprawidłowy email lub hasło.");

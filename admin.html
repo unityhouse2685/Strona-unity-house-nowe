@@ -79,7 +79,7 @@ async function loadCommunities() {
     const { data, error } = await client
         .from("communities")
         .select("*")
-        .order("created_at", { ascending: true });
+        .order("name", { ascending: true });
 
     const box = document.getElementById("communitiesList");
     box.innerHTML = "";

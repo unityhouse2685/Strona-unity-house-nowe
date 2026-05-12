@@ -3,21 +3,22 @@
 // -----------------------------------------
 
 const SUPABASE_URL = "https://ycuogutnwdybdeobowla.supabase.co";
-const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InljdW9ndXRud2R5YmRlb2Jvd2xhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg0OTE4NDAsImV4cCI6MjA5NDA2Nzg0MH0.ObkFIknc3Ce5KEmj435lI_8hi1T7E-lnxQuRSicZlPw"; // znajdziesz w Supabase → Project Settings → API → anon public
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InljdW9ndXRud2R5YmRlb2Jvd2xhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg0OTE4NDAsImV4cCI6MjA5NDA2Nzg0MH0.ObkFIknc3Ce5KEmj435lI_8hi1T7E-lnxQuRSicZlPw";
 const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// Ładowanie wspólnot do selecta w rejestracji
+
+// -----------------------------------------
+// ŁADOWANIE WSPÓLNOT DO SELECTA
+// -----------------------------------------
+
 async function loadCommunitiesForRegister() {
     const { data, error } = await client
         .from("communities")
         .select("id, name");
 
     if (error) {
-    console.error("Błąd rejestracji:", error.message, error.details);
-    alert("Nie udało się utworzyć konta. Sprawdź konsolę (F12 → Console).");
-    return;
-}
-
+        console.error("Błąd ładowania wspólnot:", error);
+        return;
     }
 
     const select = document.getElementById("communitySelect");
@@ -31,7 +32,6 @@ async function loadCommunitiesForRegister() {
     });
 }
 
-// Uruchom po załadowaniu strony
 document.addEventListener("DOMContentLoaded", loadCommunitiesForRegister);
 
 
@@ -54,26 +54,22 @@ document.addEventListener("DOMContentLoaded", () => {
                 return;
             }
 
-            // Pobieramy użytkownika z tabeli "users"
             const { data, error } = await client
-    .from("users")
-    .select("*")
-    .eq("login", email)
-    .eq("password", password)
-    .eq("approved", true)
-    .single();
-
+                .from("users")
+                .select("*")
+                .eq("login", email)
+                .eq("password", password)
+                .eq("approved", true)
+                .single();
 
             if (error || !data) {
-                alert("Nieprawidłowy email lub hasło.");
+                alert("Nieprawidłowy email, hasło lub konto nie zostało zatwierdzone.");
                 return;
             }
 
-            // Zapisujemy dane użytkownika
             localStorage.setItem("uh_user_id", data.id);
             localStorage.setItem("uh_user_role", data.role);
 
-            // Przekierowanie wg roli
             if (data.role === "admin") {
                 window.location.href = "admin.html";
             } else {
@@ -82,6 +78,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 });
+
 
 // -----------------------------------------
 // WYMAGANIE ROLI
@@ -96,6 +93,7 @@ function requireRole(role) {
     }
 }
 
+
 // -----------------------------------------
 // WYLOGOWANIE
 // -----------------------------------------
@@ -104,6 +102,8 @@ function logout() {
     localStorage.clear();
     window.location.href = "login.html";
 }
+
+
 // -----------------------------------------
 // REJESTRACJA NOWEGO MIESZKAŃCA
 // -----------------------------------------
@@ -124,7 +124,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 return;
             }
 
-            // Zapis do tabeli "users"
             const { error } = await client
                 .from("users")
                 .insert([
@@ -138,8 +137,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 ]);
 
             if (error) {
-                console.error("Błąd rejestracji:", error);
-                alert("Nie udało się utworzyć konta.");
+                console.error("Błąd rejestracji:", error.message, error.details);
+                alert("Nie udało się utworzyć konta. Sprawdź konsolę (F12 → Console).");
                 return;
             }
 

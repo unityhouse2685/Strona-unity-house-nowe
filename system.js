@@ -16,15 +16,7 @@ async function loadCommunitiesForRegister() {
         .from("communities")
         .select("id, name");
 
-    console.log("Ładowanie wspólnot...");
-    console.log("Select element:", document.getElementById("communitySelect"));
-    console.log("Dane z Supabase:", data);
-
-    if (error) {
-        console.error("Błąd ładowania wspólnot:", error);
-        return;
-    }
-
+   
     const select = document.getElementById("communitySelect");
     if (!select) return;
 

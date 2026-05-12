@@ -140,13 +140,17 @@ document.getElementById("communityForm").addEventListener("submit", async (e) =>
 // ---------------------------------------------
 // OCZEKUJĄCY MIESZKAŃCY – wersja z nazwą wspólnoty
 // ---------------------------------------------
+// ---------------------------------------------
+// OCZEKUJĄCY MIESZKAŃCY – wersja z nazwą wspólnoty
+// ---------------------------------------------
 async function loadPendingResidents() {
     const { data, error } = await client
         .from("users")
         .select(`
             id,
             login,
-            communities(name)
+            wspolnota,
+            communities:communities(name)
         `)
         .eq("approved", false);
 
@@ -154,8 +158,8 @@ async function loadPendingResidents() {
     tbody.innerHTML = "";
 
     if (error) {
-        tbody.innerHTML = "<tr><td colspan='3'>Błąd ładowania.</td></tr>";
         console.error("Błąd Supabase:", error);
+        tbody.innerHTML = "<tr><td colspan='3'>Błąd ładowania.</td></tr>";
         return;
     }
 
@@ -165,12 +169,13 @@ async function loadPendingResidents() {
     }
 
     data.forEach(user => {
-        const wspolnota = user.communities?.name || "—";
+        const wspolnotaNazwa = user.communities?.name || "—";
+
         const row = document.createElement("tr");
         row.className = "pro-row";
         row.innerHTML = `
             <td>${user.login}</td>
-            <td>${wspolnota}</td>
+            <td>${wspolnotaNazwa}</td>
             <td>
                 <button class="uh-btn uh-btn-small uh-btn-gold pro-btn-small" onclick="approveUser(${user.id})">
                     Zatwierdź
@@ -180,6 +185,7 @@ async function loadPendingResidents() {
         tbody.appendChild(row);
     });
 }
+
 
 
 

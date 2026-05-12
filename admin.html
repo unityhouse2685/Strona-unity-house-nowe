@@ -183,41 +183,66 @@ async function loadPendingResidents() {
 
     // OBSŁUGA ZATWIERDZANIA
     tbody.querySelectorAll(".zatwierdz").forEach(btn => {
-        btn.addEventListener("click", async () => {
-            const id = btn.dataset.id;
-
-            const { error } = await client
-                .from("users")
-                .update({ approved: true })
-                .eq("id", id);
-
-            if (error) {
-                alert("Błąd zatwierdzania: " + error.message);
-            } else {
-                alert("Użytkownik został zatwierdzony.");
-                loadPendingResidents();
-            }
-        });
+        btn.addEventListener("click", () => approveUser(btn.dataset.id));
     });
 
     // OBSŁUGA ODRZUCANIA
     tbody.querySelectorAll(".odrzuc").forEach(btn => {
-        btn.addEventListener("click", async () => {
-            const id = btn.dataset.id;
-
-            const { error } = await client
-                .from("users")
-                .delete()
-                .eq("id", id);
-
-            if (error) {
-                alert("Błąd odrzucania: " + error.message);
-            } else {
-                alert("Użytkownik został odrzucony i usunięty.");
-                loadPendingResidents();
-            }
-        });
+        btn.addEventListener("click", () => rejectUser(btn.dataset.id));
     });
+}
+
+
+// ---------------------------------------------
+// ZATWIERDZANIE UŻYTKOWNIKA (z logami)
+// ---------------------------------------------
+async function approveUser(userId) {
+    console.log("Zatwierdzam ID:", userId);
+
+    const { data, error } = await client
+        .from("users")
+        .update({ approved: true })
+        .eq("id", userId)
+        .select();
+
+    console.log("Supabase update result:", { data, error });
+
+    if (error) {
+        alert("Błąd zatwierdzania: " + error.message);
+        return;
+    }
+
+    if (data && data.length > 0) {
+        alert("Użytkownik został zatwierdzony.");
+    } else {
+        alert("Brak danych — Supabase nie zwrócił żadnego rekordu.");
+    }
+
+    loadPendingResidents();
+}
+
+
+// ---------------------------------------------
+// ODRZUCANIE UŻYTKOWNIKA (z logami)
+// ---------------------------------------------
+async function rejectUser(userId) {
+    console.log("Odrzucam ID:", userId);
+
+    const { data, error } = await client
+        .from("users")
+        .delete()
+        .eq("id", userId)
+        .select();
+
+    console.log("Supabase delete result:", { data, error });
+
+    if (error) {
+        alert("Błąd odrzucania: " + error.message);
+        return;
+    }
+
+    alert("Użytkownik został odrzucony i usunięty.");
+    loadPendingResidents();
 }
 
 

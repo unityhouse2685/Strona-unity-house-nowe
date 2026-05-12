@@ -5,13 +5,11 @@
     <title>Panel administratora – Unity House</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <!-- STYLE -->
     <link rel="stylesheet" href="base.css">
     <link rel="stylesheet" href="layout.css">
     <link rel="stylesheet" href="components.css">
     <link rel="stylesheet" href="admin.css">
 
-    <!-- SUPABASE + SYSTEM -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="system.js"></script>
 </head>
@@ -43,7 +41,7 @@
 
     <hr class="pro-divider">
 
-    <!-- NOWA SEKCJA: UŻYTKOWNICY DO AKCEPTACJI -->
+    <!-- NOWE KONTA DO AKCEPTACJI -->
     <section class="panel-section pro-section">
         <h2 class="pro-section-title">Nowe konta do akceptacji</h2>
         <div id="pendingUsersList" class="users-list pro-users"></div>
@@ -51,7 +49,7 @@
 
     <hr class="pro-divider">
 
-    <!-- SEKCJA ZGŁOSZEŃ -->
+    <!-- ZGŁOSZENIA -->
     <section class="panel-section pro-section">
         <h2 class="pro-section-title">Zgłoszenia mieszkańców</h2>
         <div id="ticketsList" class="tickets-list pro-tickets"></div>
@@ -80,7 +78,6 @@
     text-decoration: none;
 }
 
-/* Karty użytkowników */
 .user-card {
     background: #1c1c1c;
     padding: 14px;
@@ -94,9 +91,7 @@
 /* ---------------------------------------------
    WYLOGOWANIE
 --------------------------------------------- */
-document.getElementById("logoutBtn").onclick = () => {
-    logout();
-};
+document.getElementById("logoutBtn").onclick = () => logout();
 
 /* ---------------------------------------------
    ŁADOWANIE WSPÓLNOT
@@ -143,9 +138,8 @@ document.getElementById("addCommunityBtn").onclick = async () => {
     loadCommunities();
 };
 
-
 /* ---------------------------------------------
-   NOWE: ŁADOWANIE UŻYTKOWNIKÓW DO AKCEPTACJI
+   NOWE KONTA DO AKCEPTACJI
 --------------------------------------------- */
 async function loadPendingUsers() {
     const { data, error } = await client
@@ -168,13 +162,20 @@ async function loadPendingUsers() {
         return;
     }
 
+    // pobieramy wspólnoty do mapowania ID → nazwa
+    const { data: wspolnoty } = await client
+        .from("communities")
+        .select("id, name");
+
     data.forEach(u => {
+        const wsp = wspolnoty.find(w => w.id === u.community_id);
+
         const div = document.createElement("div");
         div.className = "user-card";
 
         div.innerHTML = `
             <p><strong>Email:</strong> ${u.login}</p>
-            <p><strong>Wspólnota:</strong> ${u.wspolnota}</p>
+            <p><strong>Wspólnota:</strong> ${wsp ? wsp.name : "—"}</p>
 
             <button class="uh-btn uh-btn-gold accept-btn">Akceptuj</button>
             <button class="uh-btn uh-btn-outline delete-btn">Usuń</button>
@@ -194,9 +195,8 @@ async function loadPendingUsers() {
     });
 }
 
-
 /* ---------------------------------------------
-   ŁADOWANIE ZGŁOSZEŃ + ZAŁĄCZNIKÓW
+   ZGŁOSZENIA
 --------------------------------------------- */
 async function loadTickets() {
     const { data, error } = await client
@@ -208,7 +208,7 @@ async function loadTickets() {
             priority,
             status,
             created_at,
-            users ( login, wspolnota )
+            users ( login, community_id )
         `)
         .order("created_at", { ascending: false });
 
@@ -226,7 +226,13 @@ async function loadTickets() {
         return;
     }
 
+    const { data: wspolnoty } = await client
+        .from("communities")
+        .select("id, name");
+
     for (const t of data) {
+
+        const wsp = wspolnoty.find(w => w.id === t.users?.community_id);
 
         const { data: files } = await client
             .from("tickets_files")
@@ -253,7 +259,7 @@ async function loadTickets() {
             <p>${t.description}</p>
 
             <p><strong>Mieszkaniec:</strong> ${t.users?.login ?? "nieznany"}</p>
-            <p><strong>Wspólnota:</strong> ${t.users?.wspolnota ?? "nieznana"}</p>
+            <p><strong>Wspólnota:</strong> ${wsp ? wsp.name : "—"}</p>
 
             <div class="ticket-files">${filesHtml}</div>
 
@@ -279,7 +285,6 @@ async function loadTickets() {
         container.appendChild(div);
     }
 }
-
 
 /* ---------------------------------------------
    START

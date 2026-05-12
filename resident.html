@@ -1,60 +1,140 @@
 <!DOCTYPE html>
 <html lang="pl">
 <head>
-   <meta charset="UTF-8">
-  <title>Panel mieszkańca – Unity House</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8">
+    <title>Panel mieszkańca – Unity House</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
- <link rel="stylesheet" href="base.css">
-<link rel="stylesheet" href="layout.css">
-<link rel="stylesheet" href="components.css">
-<link rel="stylesheet" href="resident.css">
-<script src="system.js"></script>
+    <!-- STYLE (wszystko w jednym folderze) -->
+    <link rel="stylesheet" href="base.css">
+    <link rel="stylesheet" href="layout.css">
+    <link rel="stylesheet" href="components.css">
+    <link rel="stylesheet" href="resident.css">
+
+    <!-- SUPABASE + SYSTEM -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="system.js" defer></script>
 </head>
 
 <body class="uh-body">
 
-<header class="uh-topbar">
-    <div class="uh-logo">Unity House</div>
+<header class="uh-topbar pro-topbar">
+    <div class="uh-logo pro-logo">Unity House</div>
     <nav class="uh-nav">
-        <span class="uh-nav-label">Panel mieszkańca</span>
-        <button id="logoutBtn" class="uh-btn uh-btn-outline">Wyloguj</button>
+        <span class="uh-nav-label pro-nav-label">Panel mieszkańca</span>
+        <button id="logoutBtn" class="uh-btn uh-btn-outline pro-logout">Wyloguj</button>
     </nav>
 </header>
 
-<main class="uh-main panel">
+<main class="uh-main panel pro-panel">
 
-    <section class="panel-section">
-        <h2>Nowe zgłoszenie</h2>
+    <!-- SEKCJA 1 — DANE MIESZKAŃCA -->
+    <section class="panel-section pro-section">
+        <h2 class="pro-section-title">Moje dane</h2>
+        <div id="residentInfo" class="info-box pro-info-box">
+            Ładowanie danych...
+        </div>
+    </section>
 
-        <form id="ticketForm">
-            <label>Tytuł</label>
-            <input type="text" id="ticketTitle" required>
+    <!-- SEKCJA 2 — ZGŁOSZENIE USTERKI -->
+    <section class="panel-section pro-section">
+        <h2 class="pro-section-title">Zgłoś usterkę</h2>
 
-            <label>Opis</label>
-            <textarea id="ticketDesc" rows="4" required></textarea>
+        <form id="ticketForm" class="ticket-form pro-ticket-form">
+            <input type="text" id="ticketTitle" placeholder="Tytuł zgłoszenia" required class="pro-input">
+            <textarea id="ticketDescription" placeholder="Opis usterki" required class="pro-textarea"></textarea>
 
-            <button class="uh-btn uh-btn-gold">Wyślij zgłoszenie</button>
+            <select id="ticketPriority" class="pro-select">
+                <option value="niski">Niski</option>
+                <option value="średni">Średni</option>
+                <option value="wysoki">Wysoki</option>
+            </select>
+
+            <button class="uh-btn uh-btn-gold pro-btn">Wyślij zgłoszenie</button>
         </form>
     </section>
 
-    <section class="panel-section">
-        <h2>Twoje zgłoszenia</h2>
-        <div id="ticketsList" class="tickets-list"></div>
+    <!-- SEKCJA 3 — MOJE ZGŁOSZENIA -->
+    <section class="panel-section pro-section">
+        <h2 class="pro-section-title">Moje zgłoszenia</h2>
+        <div id="myTicketsList" class="tickets-list pro-tickets"></div>
     </section>
 
 </main>
 
 <script>
-// Wymagamy roli mieszkańca
-requireRole("resident");
+// ---------------------------------------------
+// WYLOGOWANIE
+// ---------------------------------------------
+document.getElementById("logoutBtn").onclick = () => {
+    localStorage.clear();
+    window.location.href = "login.html";
+};
 
-// Wylogowanie
-document.getElementById("logoutBtn").onclick = logout;
+// ---------------------------------------------
+// ŁADOWANIE DANYCH MIESZKAŃCA
+// ---------------------------------------------
+async function loadResidentInfo() {
+    const userId = localStorage.getItem("user_id");
 
-// Ładowanie zgłoszeń
-async function loadTickets() {
-    const userId = localStorage.getItem("uh_user_id");
+    const { data, error } = await client
+        .from("users")
+        .select("login, wspolnota")
+        .eq("id", userId)
+        .single();
+
+    const box = document.getElementById("residentInfo");
+
+    if (error) {
+        box.textContent = "Błąd ładowania danych.";
+        return;
+    }
+
+    box.innerHTML = `
+        <p><strong>Login:</strong> ${data.login}</p>
+        <p><strong>Wspólnota:</strong> ${data.wspolnota}</p>
+    `;
+}
+
+// ---------------------------------------------
+// WYSYŁANIE ZGŁOSZENIA
+// ---------------------------------------------
+document.getElementById("ticketForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const userId = localStorage.getItem("user_id");
+
+    const title = ticketTitle.value.trim();
+    const description = ticketDescription.value.trim();
+    const priority = ticketPriority.value;
+
+    const { error } = await client
+        .from("tickets")
+        .insert({
+            user_id: userId,
+            title,
+            description,
+            priority,
+            status: "nowe"
+        });
+
+    if (error) {
+        alert("Nie udało się wysłać zgłoszenia.");
+        return;
+    }
+
+    ticketTitle.value = "";
+    ticketDescription.value = "";
+    ticketPriority.value = "niski";
+
+    loadMyTickets();
+});
+
+// ---------------------------------------------
+// ŁADOWANIE ZGŁOSZEŃ MIESZKAŃCA
+// ---------------------------------------------
+async function loadMyTickets() {
+    const userId = localStorage.getItem("user_id");
 
     const { data, error } = await client
         .from("tickets")
@@ -62,7 +142,7 @@ async function loadTickets() {
         .eq("user_id", userId)
         .order("created_at", { ascending: false });
 
-    const container = document.getElementById("ticketsList");
+    const container = document.getElementById("myTicketsList");
     container.innerHTML = "";
 
     if (error) {
@@ -77,46 +157,22 @@ async function loadTickets() {
 
     data.forEach(t => {
         const div = document.createElement("div");
-        div.className = "ticket-card";
+        div.className = "ticket-card pro-ticket-card";
         div.innerHTML = `
             <h3>${t.title}</h3>
             <p>${t.description}</p>
-            <span class="ticket-status">Status: ${t.status}</span>
+            <span class="ticket-status pro-status">Status: ${t.status}</span>
+            <span class="ticket-priority pro-priority">Priorytet: ${t.priority}</span>
         `;
         container.appendChild(div);
     });
 }
 
-// Wysyłanie zgłoszenia
-document.getElementById("ticketForm").addEventListener("submit", async (e) => {
-    e.preventDefault();
-
-    const userId = localStorage.getItem("uh_user_id");
-    const title = ticketTitle.value.trim();
-    const description = ticketDesc.value.trim();
-
-    if (!title || !description) return;
-
-    const { error } = await client
-        .from("tickets")
-        .insert({
-            user_id: userId,
-            title,
-            description,
-            status: "nowe"
-        });
-
-    if (error) {
-        alert("Nie udało się wysłać zgłoszenia.");
-        return;
-    }
-
-    ticketTitle.value = "";
-    ticketDesc.value = "";
-    loadTickets();
-});
-
-loadTickets();
+// ---------------------------------------------
+// START
+// ---------------------------------------------
+loadResidentInfo();
+loadMyTickets();
 </script>
 
 </body>

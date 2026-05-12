@@ -1,0 +1,83 @@
+/* ====== UNITY HOUSE – REGISTER PAGE ====== */
+
+body {
+    margin: 0;
+    padding: 0;
+    font-family: "Inter", sans-serif;
+    background: #0d0d0d;
+    color: #fff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+/* Kontener formularza */
+.register-container {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 40px;
+    width: 380px;
+    border-radius: 14px;
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 215, 0, 0.25);
+    box-shadow: 0 0 25px rgba(0, 0, 0, 0.4);
+}
+
+/* Nagłówek */
+.register-container h2 {
+    text-align: center;
+    margin-bottom: 25px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    color: #f5d67b;
+}
+
+/* Pola formularza */
+.register-container input {
+    width: 100%;
+    padding: 12px 14px;
+    margin-bottom: 15px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 215, 0, 0.3);
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
+    font-size: 15px;
+    outline: none;
+    transition: 0.2s;
+}
+
+.register-container input:focus {
+    border-color: #ffd700;
+    background: rgba(255, 255, 255, 0.15);
+}
+
+/* Przycisk */
+.register-container button {
+    width: 100%;
+    padding: 12px;
+    background: #f5d67b;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.register-container button:hover {
+    background: #ffe08a;
+}
+
+/* Link powrotu */
+.register-container .back-link {
+    display: block;
+    text-align: center;
+    margin-top: 15px;
+    color: #ccc;
+    text-decoration: none;
+    font-size: 14px;
+}
+
+.register-container .back-link:hover {
+    color: #fff;
+}

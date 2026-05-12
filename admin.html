@@ -170,10 +170,10 @@ async function loadPendingResidents() {
             <td>${user.login}</td>
             <td>${wspolnotaNazwa}</td>
             <td>
-                <button class="uh-btn uh-btn-small uh-btn-gold pro-btn-small" onclick="approveUser(${user.id})">
+                <button class="uh-btn uh-btn-small uh-btn-gold pro-btn-small" onclick="approveUser('${user.id}')">
                     Zatwierdź
                 </button>
-                <button class="uh-btn uh-btn-small pro-btn-small" onclick="rejectUser(${user.id})">
+                <button class="uh-btn uh-btn-small pro-btn-small" onclick="rejectUser('${user.id}')">
                     Odrzuć
                 </button>
             </td>

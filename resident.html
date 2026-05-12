@@ -5,7 +5,7 @@
     <title>Panel mieszkańca – Unity House</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <!-- STYLE (wszystko w jednym folderze) -->
+    <!-- STYLE -->
     <link rel="stylesheet" href="base.css">
     <link rel="stylesheet" href="layout.css">
     <link rel="stylesheet" href="components.css">
@@ -13,8 +13,7 @@
 
     <!-- SUPABASE + SYSTEM -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="system.js"></script>
-
+    <script src="system.js"></script> <!-- USUNIĘTO defer -->
 </head>
 
 <body class="uh-body">
@@ -63,20 +62,20 @@
 
 </main>
 
-<script>
-// ---------------------------------------------
-// WYLOGOWANIE
-// ---------------------------------------------
+<script defer>
+/* ---------------------------------------------
+   WYLOGOWANIE
+--------------------------------------------- */
 document.getElementById("logoutBtn").onclick = () => {
     localStorage.clear();
     window.location.href = "login.html";
 };
 
-// ---------------------------------------------
-// ŁADOWANIE DANYCH MIESZKAŃCA
-// ---------------------------------------------
+/* ---------------------------------------------
+   ŁADOWANIE DANYCH MIESZKAŃCA
+--------------------------------------------- */
 async function loadResidentInfo() {
-    const userId = localStorage.getItem("user_id");
+    const userId = localStorage.getItem("uh_user_id");  /* POPRAWIONE */
 
     const { data, error } = await client
         .from("users")
@@ -97,13 +96,13 @@ async function loadResidentInfo() {
     `;
 }
 
-// ---------------------------------------------
-// WYSYŁANIE ZGŁOSZENIA
-// ---------------------------------------------
+/* ---------------------------------------------
+   WYSYŁANIE ZGŁOSZENIA
+--------------------------------------------- */
 document.getElementById("ticketForm").addEventListener("submit", async (e) => {
     e.preventDefault();
 
-    const userId = localStorage.getItem("user_id");
+    const userId = localStorage.getItem("uh_user_id"); /* POPRAWIONE */
 
     const title = ticketTitle.value.trim();
     const description = ticketDescription.value.trim();
@@ -131,11 +130,11 @@ document.getElementById("ticketForm").addEventListener("submit", async (e) => {
     loadMyTickets();
 });
 
-// ---------------------------------------------
-// ŁADOWANIE ZGŁOSZEŃ MIESZKAŃCA
-// ---------------------------------------------
+/* ---------------------------------------------
+   ŁADOWANIE ZGŁOSZEŃ MIESZKAŃCA
+--------------------------------------------- */
 async function loadMyTickets() {
-    const userId = localStorage.getItem("user_id");
+    const userId = localStorage.getItem("uh_user_id"); /* POPRAWIONE */
 
     const { data, error } = await client
         .from("tickets")
@@ -169,9 +168,9 @@ async function loadMyTickets() {
     });
 }
 
-// ---------------------------------------------
-// START
-// ---------------------------------------------
+/* ---------------------------------------------
+   START
+--------------------------------------------- */
 loadResidentInfo();
 loadMyTickets();
 </script>

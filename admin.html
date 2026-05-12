@@ -170,54 +170,54 @@ async function loadPendingResidents() {
             <td>${user.login}</td>
             <td>${wspolnotaNazwa}</td>
             <td>
-                <button class="uh-btn uh-btn-small uh-btn-gold pro-btn-small" onclick="approveUser('${user.id}')">
+                <button class="uh-btn uh-btn-small uh-btn-gold pro-btn-small zatwierdz" data-id="${user.id}">
                     Zatwierdź
                 </button>
-                <button class="uh-btn uh-btn-small pro-btn-small" onclick="rejectUser('${user.id}')">
+                <button class="uh-btn uh-btn-small pro-btn-small odrzuc" data-id="${user.id}">
                     Odrzuć
                 </button>
             </td>
         `;
         tbody.appendChild(row);
     });
-}
 
+    // OBSŁUGA ZATWIERDZANIA
+    tbody.querySelectorAll(".zatwierdz").forEach(btn => {
+        btn.addEventListener("click", async () => {
+            const id = btn.dataset.id;
 
-// ---------------------------------------------
-// ZATWIERDZANIE UŻYTKOWNIKA
-// ---------------------------------------------
-async function approveUser(userId) {
-    const { error } = await client
-        .from("users")
-        .update({ approved: true })
-        .eq("id", userId);
+            const { error } = await client
+                .from("users")
+                .update({ approved: true })
+                .eq("id", id);
 
-    if (error) {
-        alert("Błąd zatwierdzania: " + error.message);
-        return;
-    }
+            if (error) {
+                alert("Błąd zatwierdzania: " + error.message);
+            } else {
+                alert("Użytkownik został zatwierdzony.");
+                loadPendingResidents();
+            }
+        });
+    });
 
-    alert("Użytkownik został zatwierdzony.");
-    loadPendingResidents();
-}
+    // OBSŁUGA ODRZUCANIA
+    tbody.querySelectorAll(".odrzuc").forEach(btn => {
+        btn.addEventListener("click", async () => {
+            const id = btn.dataset.id;
 
+            const { error } = await client
+                .from("users")
+                .delete()
+                .eq("id", id);
 
-// ---------------------------------------------
-// ODRZUCANIE UŻYTKOWNIKA
-// ---------------------------------------------
-async function rejectUser(userId) {
-    const { error } = await client
-        .from("users")
-        .delete()
-        .eq("id", userId);
-
-    if (error) {
-        alert("Błąd odrzucania: " + error.message);
-        return;
-    }
-
-    alert("Użytkownik został odrzucony i usunięty.");
-    loadPendingResidents();
+            if (error) {
+                alert("Błąd odrzucania: " + error.message);
+            } else {
+                alert("Użytkownik został odrzucony i usunięty.");
+                loadPendingResidents();
+            }
+        });
+    });
 }
 
 

@@ -12,6 +12,13 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/system.js" defer></script>
+
+    <!-- Blokada autouzupełniania -->
+    <style>
+        input:-webkit-autofill {
+            transition: background-color 9999s ease-in-out 0s;
+        }
+    </style>
 </head>
 
 <body class="login-body">
@@ -20,11 +27,30 @@
     <h2 class="login-title">Logowanie</h2>
 
     <form id="loginForm" autocomplete="off">
+
         <label>Email</label>
-        <input type="email" id="loginEmail" required autocomplete="off">
+        <input 
+            type="text" 
+            id="loginEmail" 
+            name="uh_email"
+            required 
+            autocomplete="new-email"
+            autocorrect="off"
+            autocapitalize="none"
+            spellcheck="false"
+        >
 
         <label>Hasło</label>
-        <input type="password" id="loginPassword" required autocomplete="off">
+        <input 
+            type="password" 
+            id="loginPassword" 
+            name="uh_pass"
+            required 
+            autocomplete="new-password"
+            autocorrect="off"
+            autocapitalize="none"
+            spellcheck="false"
+        >
 
         <button class="uh-btn uh-btn-gold full">Zaloguj się</button>
     </form>

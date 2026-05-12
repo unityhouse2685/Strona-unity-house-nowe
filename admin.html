@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>Panel administratora – Unity House</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/layout.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/admin.css">
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/system.js" defer></script>
+</head>
+
+<body class="uh-body">
+
+<header class="uh-topbar">
+    <div class="uh-logo">Unity House</div>
+    <nav class="uh-nav">
+        <span class="uh-nav-label">Panel administratora</span>
+        <button id="logoutBtn" class="uh-btn uh-btn-outline">Wyloguj</button>
+    </nav>
+</header>
+
+<main class="uh-main panel">
+
+    <section class="panel-section">
+        <h2>Wspólnoty mieszkaniowe</h2>
+
+        <form id="communityForm" class="inline-form">
+            <input type="text" id="communityName" placeholder="Nazwa" required>
+            <input type="text" id="communityAddress" placeholder="Adres" required>
+            <button class="uh-btn uh-btn-gold">Dodaj</button>
+        </form>
+
+        <div id="communitiesList" class="list"></div>
+    </section>
+
+    <section class="panel-section">
+        <h2>Zgłoszenia mieszkańców</h2>
+        <div id="adminTicketsList" class="tickets-list"></div>
+    </section>
+
+</main>
+
+<script>
+// Wymagamy roli administratora
+requireRole("admin");
+
+// Wylogowanie
+document.getElementById("logoutBtn").onclick = logout;
+
+// Ładowanie wspólnot
+async function loadCommunities() {
+    const { data, error } = await client
+        .from("communities")
+        .select("*")
+        .order("name", { ascending: true });
+
+    const container = document.getElementById("communitiesList");
+    container.innerHTML = "";
+
+    if (error) {
+        container.textContent = "Błąd ładowania wspólnot.";
+        return;
+    }
+
+    if (!data.length) {
+        container.textContent = "Brak dodanych wspólnot.";
+        return;
+    }
+
+    data.forEach(c => {
+        const div = document.createElement("div");
+        div.className = "list-item";
+        div.textContent = `${c.name} – ${c.address}`;
+        container.appendChild(div);
+    });
+}
+
+// Dodawanie wspólnoty
+document.getElementById("communityForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const name = communityName.value.trim();
+    const address = communityAddress.value.trim();
+
+    if (!name || !address) return;
+
+    const { error } = await client
+        .from("communities")
+        .insert({ name, address });
+
+    if (error) {
+        alert("Nie udało się dodać wspólnoty.");
+        return;
+    }
+
+    communityName.value = "";
+    communityAddress.value = "";
+    loadCommunities();
+});
+
+// Ładowanie zgłoszeń
+async function loadAdminTickets() {
+    const { data, error } = await client
+        .from("tickets")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+    const container = document.getElementById("adminTicketsList");
+    container.innerHTML = "";
+
+    if (error) {
+        container.textContent = "Błąd ładowania zgłoszeń.";
+        return;
+    }
+
+    if (!data.length) {
+        container.textContent = "Brak zgłoszeń.";
+        return;
+    }
+
+    data.forEach(t => {
+        const div = document.createElement("div");
+        div.className = "ticket-card";
+        div.innerHTML = `
+            <h3>${t.title}</h3>
+            <p>${t.description}</p>
+            <span class="ticket-status">Status: ${t.status}</span>
+            <div style="margin-top:8px; display:flex; gap:8px;">
+                <button data-id="${t.id}" data-status="w trakcie" class="uh-btn uh-btn-small">W trakcie</button>
+                <button data-id="${t.id}" data-status="zakończone" class="uh-btn uh-btn-small uh-btn-gold">Zakończ</button>
+            </div>
+        `;
+        container.appendChild(div);
+    });
+
+    // Obsługa zmiany statusu
+    container.querySelectorAll("button[data-id]").forEach(btn => {
+        btn.addEventListener("click", async () => {
+            const id = btn.getAttribute("data-id");
+            const status = btn.getAttribute("data-status");
+
+            const { error } = await client
+                .from("tickets")
+                .update({ status })
+                .eq("id", id);
+
+            if (error) {
+                alert("Nie udało się zmienić statusu.");
+                return;
+            }
+
+            loadAdminTickets();
+        });
+    });
+}
+
+loadCommunities();
+loadAdminTickets();
+</script>
+
+</body>
+</html>

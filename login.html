@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>Logowanie – Unity House</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/layout.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/auth.css">
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/system.js" defer></script>
+</head>
+
+<body class="login-body">
+
+<div class="login-container">
+    <h2 class="login-title">Logowanie</h2>
+
+    <form id="loginForm" autocomplete="off">
+        <label>Email</label>
+        <input type="email" id="loginEmail" required autocomplete="off">
+
+        <label>Hasło</label>
+        <input type="password" id="loginPassword" required autocomplete="off">
+
+        <button class="uh-btn uh-btn-gold full">Zaloguj się</button>
+    </form>
+
+    <div class="login-links">
+        <a href="register.html">Nie masz konta? Zarejestruj się</a>
+    </div>
+
+    <p class="login-footer">© <span id="year"></span> Unity House Gostyń</p>
+</div>
+
+<script>
+document.getElementById("year").textContent = new Date().getFullYear();
+</script>
+
+</body>
+</html>

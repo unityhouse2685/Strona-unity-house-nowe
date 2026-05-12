@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>Panel mieszkańca – Unity House</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/layout.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/resident.css">
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/system.js" defer></script>
+</head>
+
+<body class="uh-body">
+
+<header class="uh-topbar">
+    <div class="uh-logo">Unity House</div>
+    <nav class="uh-nav">
+        <span class="uh-nav-label">Panel mieszkańca</span>
+        <button id="logoutBtn" class="uh-btn uh-btn-outline">Wyloguj</button>
+    </nav>
+</header>
+
+<main class="uh-main panel">
+
+    <section class="panel-section">
+        <h2>Nowe zgłoszenie</h2>
+
+        <form id="ticketForm">
+            <label>Tytuł</label>
+            <input type="text" id="ticketTitle" required>
+
+            <label>Opis</label>
+            <textarea id="ticketDesc" rows="4" required></textarea>
+
+            <button class="uh-btn uh-btn-gold">Wyślij zgłoszenie</button>
+        </form>
+    </section>
+
+    <section class="panel-section">
+        <h2>Twoje zgłoszenia</h2>
+        <div id="ticketsList" class="tickets-list"></div>
+    </section>
+
+</main>
+
+<script>
+// Wymagamy roli mieszkańca
+requireRole("resident");
+
+// Wylogowanie
+document.getElementById("logoutBtn").onclick = logout;
+
+// Ładowanie zgłoszeń
+async function loadTickets() {
+    const userId = localStorage.getItem("uh_user_id");
+
+    const { data, error } = await client
+        .from("tickets")
+        .select("*")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false });
+
+    const container = document.getElementById("ticketsList");
+    container.innerHTML = "";
+
+    if (error) {
+        container.textContent = "Błąd ładowania zgłoszeń.";
+        return;
+    }
+
+    if (!data.length) {
+        container.textContent = "Brak zgłoszeń.";
+        return;
+    }
+
+    data.forEach(t => {
+        const div = document.createElement("div");
+        div.className = "ticket-card";
+        div.innerHTML = `
+            <h3>${t.title}</h3>
+            <p>${t.description}</p>
+            <span class="ticket-status">Status: ${t.status}</span>
+        `;
+        container.appendChild(div);
+    });
+}
+
+// Wysyłanie zgłoszenia
+document.getElementById("ticketForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const userId = localStorage.getItem("uh_user_id");
+    const title = ticketTitle.value.trim();
+    const description = ticketDesc.value.trim();
+
+    if (!title || !description) return;
+
+    const { error } = await client
+        .from("tickets")
+        .insert({
+            user_id: userId,
+            title,
+            description,
+            status: "nowe"
+        });
+
+    if (error) {
+        alert("Nie udało się wysłać zgłoszenia.");
+        return;
+    }
+
+    ticketTitle.value = "";
+    ticketDesc.value = "";
+    loadTickets();
+});
+
+loadTickets();
+</script>
+
+</body>
+</html>

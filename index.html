@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>Unity House – Zarządzanie wspólnotą</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/layout.css">
+    <link rel="stylesheet" href="css/components.css">
+</head>
+
+<body class="uh-body">
+
+<header class="uh-topbar">
+    <div class="uh-logo">Unity House</div>
+    <nav class="uh-nav">
+        <a href="#o-nas">O nas</a>
+        <a href="#uslugi">Usługi</a>
+        <a href="#wspolnoty">Wspólnoty</a>
+        <a href="#kontakt">Kontakt</a>
+        <a href="login.html" class="uh-btn uh-btn-gold">Panel mieszkańca</a>
+    </nav>
+</header>
+
+<main class="uh-main">
+
+    <section class="hero">
+        <div class="hero-content">
+            <h1>Nowoczesne zarządzanie wspólnotą mieszkaniową</h1>
+            <p>Przejrzysta komunikacja, szybka obsługa zgłoszeń, pełna kontrola nad Twoją nieruchomością.</p>
+
+            <div class="hero-actions">
+                <a href="login.html" class="uh-btn uh-btn-gold">Zaloguj się</a>
+                <a href="register.html" class="uh-btn uh-btn-outline">Zarejestruj się</a>
+            </div>
+        </div>
+    </section>
+
+    <section id="o-nas" class="section">
+        <h2>O nas</h2>
+        <p>Unity House Gostyń to nowoczesne podejście do zarządzania nieruchomościami – transparentnie, cyfrowo, z szacunkiem do mieszkańców.</p>
+    </section>
+
+    <section id="uslugi" class="section">
+        <h2>Usługi</h2>
+        <ul class="uh-list">
+            <li>Obsługa administracyjna wspólnot mieszkaniowych</li>
+            <li>Cyfrowy system zgłoszeń usterek</li>
+            <li>Raportowanie i rozliczenia</li>
+        </ul>
+    </section>
+
+    <section id="wspolnoty" class="section">
+        <h2>Wspólnoty</h2>
+        <p>Obsługujemy wspólnoty mieszkaniowe w Gostyniu i okolicach. Po zalogowaniu zobaczysz swoją wspólnotę i zgłoszenia.</p>
+    </section>
+
+    <section id="kontakt" class="section">
+        <h2>Kontakt</h2>
+        <p>Email: biuro@unityhouse.pl</p>
+        <p>Telefon: +48 000 000 000</p>
+    </section>
+
+</main>
+
+<footer class="uh-footer">
+    <span>© <span id="year"></span> Unity House Gostyń</span>
+    <a href="#">Polityka prywatności</a>
+</footer>
+
+<script>
+document.getElementById("year").textContent = new Date().getFullYear();
+</script>
+
+</body>
+</html>

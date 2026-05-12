@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>Rejestracja – Unity House</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/layout.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/auth.css">
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/system.js" defer></script>
+</head>
+
+<body class="login-body">
+
+<div class="login-container">
+    <h2 class="login-title">Rejestracja mieszkańca</h2>
+
+    <form id="registerForm" autocomplete="off">
+
+        <label>Imię i nazwisko</label>
+        <input type="text" id="nameInput" required>
+
+        <label>Adres zamieszkania</label>
+        <input type="text" id="addressInput" required>
+
+        <label>Email (login)</label>
+        <input type="email" id="emailInput" required>
+
+        <label>Hasło</label>
+        <input type="password" id="passwordInput" required>
+
+        <div class="password-strength">
+            <div id="strengthBar"></div>
+        </div>
+
+        <label>Wspólnota mieszkaniowa</label>
+        <select id="communitySelect" required>
+            <option value="">Wybierz…</option>
+        </select>
+
+        <button class="uh-btn uh-btn-gold full">Utwórz konto</button>
+    </form>
+
+    <div class="login-links">
+        <a href="login.html">Masz już konto? Zaloguj się</a>
+    </div>
+
+    <p class="login-footer">© <span id="year"></span> Unity House Gostyń</p>
+</div>
+
+<script>
+document.getElementById("year").textContent = new Date().getFullYear();
+</script>
+
+</body>
+</html>

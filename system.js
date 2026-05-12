@@ -13,8 +13,11 @@ async function loadCommunitiesForRegister() {
         .select("id, name");
 
     if (error) {
-        console.error("Błąd ładowania wspólnot:", error);
-        return;
+    console.error("Błąd rejestracji:", error.message, error.details);
+    alert("Nie udało się utworzyć konta. Sprawdź konsolę (F12 → Console).");
+    return;
+}
+
     }
 
     const select = document.getElementById("communitySelect");

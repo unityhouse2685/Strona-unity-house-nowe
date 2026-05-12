@@ -16,7 +16,6 @@ async function loadCommunitiesForRegister() {
         .from("communities")
         .select("id, name");
 
-   
     const select = document.getElementById("communitySelect");
     if (!select) return;
 
@@ -28,12 +27,11 @@ async function loadCommunitiesForRegister() {
     });
 }
 
-
 document.addEventListener("DOMContentLoaded", loadCommunitiesForRegister);
 
 
 // -----------------------------------------
-// LOGOWANIE
+// POPRAWIONE LOGOWANIE — SUPABASE AUTH
 // -----------------------------------------
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -51,23 +49,39 @@ document.addEventListener("DOMContentLoaded", () => {
                 return;
             }
 
-            const { data, error } = await client
-                .from("users")
-                .select("*")
-                .eq("login", email)
-                .eq("password", password)
-                .eq("approved", true)
-                .single();
+            // 1. Logowanie do Supabase Auth
+            const { data: authData, error: authError } = await client.auth.signInWithPassword({
+                email,
+                password
+            });
 
-            if (error || !data) {
-                alert("Nieprawidłowy email, hasło lub konto nie zostało zatwierdzone.");
+            if (authError) {
+                alert("Niepoprawny email lub hasło.");
+                console.error(authError);
                 return;
             }
 
-            localStorage.setItem("uh_user_id", data.id);
-            localStorage.setItem("uh_user_role", data.role);
+            const authId = authData.user.id;
 
-            if (data.role === "admin") {
+            // 2. Pobieramy użytkownika z tabeli users
+            const { data: userData, error: userError } = await client
+                .from("users")
+                .select("*")
+                .eq("auth_id", authId)
+                .eq("approved", true)
+                .single();
+
+            if (userError || !userData) {
+                alert("Konto nie zostało zatwierdzone przez administratora.");
+                return;
+            }
+
+            // 3. Zapisujemy dane lokalnie
+            localStorage.setItem("uh_user_id", userData.id);
+            localStorage.setItem("uh_user_role", userData.role);
+
+            // 4. Przekierowanie
+            if (userData.role === "admin") {
                 window.location.href = "admin.html";
             } else {
                 window.location.href = "resident.html";
@@ -96,13 +110,14 @@ function requireRole(role) {
 // -----------------------------------------
 
 function logout() {
+    client.auth.signOut(); // ważne — usuwa sesję JWT
     localStorage.clear();
     window.location.href = "login.html";
 }
 
 
 // -----------------------------------------
-// REJESTRACJA NOWEGO MIESZKAŃCA
+// POPRAWIONA REJESTRACJA — SUPABASE AUTH
 // -----------------------------------------
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -112,20 +127,36 @@ document.addEventListener("DOMContentLoaded", () => {
         registerForm.addEventListener("submit", async (e) => {
             e.preventDefault();
 
-            const login = document.getElementById("emailInput").value.trim();
+            const email = document.getElementById("emailInput").value.trim();
             const password = document.getElementById("passwordInput").value.trim();
             const wspolnota = document.getElementById("communitySelect").value;
 
-            if (!login || !password || !wspolnota) {
+            if (!email || !password || !wspolnota) {
                 alert("Uzupełnij wszystkie pola.");
                 return;
             }
 
-            const { error } = await client
+            // 1. Tworzymy konto w Supabase Auth
+            const { data: authData, error: authError } = await client.auth.signUp({
+                email,
+                password
+            });
+
+            if (authError) {
+                console.error("Błąd Auth:", authError);
+                alert("Nie udało się utworzyć konta.");
+                return;
+            }
+
+            const authId = authData.user.id;
+
+            // 2. Tworzymy rekord w tabeli users
+            const { error: insertError } = await client
                 .from("users")
                 .insert([
                     {
-                        login: login,
+                        auth_id: authId,
+                        login: email,
                         password: password,
                         wspolnota: wspolnota,
                         role: "resident",
@@ -133,13 +164,13 @@ document.addEventListener("DOMContentLoaded", () => {
                     }
                 ]);
 
-            if (error) {
-                console.error("Błąd rejestracji:", error.message, error.details);
-                alert("Nie udało się utworzyć konta. Sprawdź konsolę (F12 → Console).");
+            if (insertError) {
+                console.error("Błąd rejestracji:", insertError);
+                alert("Nie udało się utworzyć konta.");
                 return;
             }
 
-            alert("Konto zostało utworzone. Administrator musi je zatwierdzić przed pierwszym logowaniem.");
+            alert("Konto zostało utworzone. Administrator musi je zatwierdzić.");
             window.location.href = "login.html";
         });
     }

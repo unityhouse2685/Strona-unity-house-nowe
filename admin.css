@@ -1,0 +1,47 @@
+.inline-form {
+    display: flex;
+    gap: 0.6rem;
+    margin-bottom: 1rem;
+}
+
+.inline-form input {
+    flex: 1;
+}
+
+.list {
+    margin-top: 0.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.list-item {
+    background: #0b0f1a;
+    padding: 0.7rem 0.9rem;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    font-size: 0.85rem;
+    color: var(--muted);
+}
+
+.ticket-card {
+    background: #0b0f1a;
+    border-radius: 10px;
+    padding: 1rem;
+    border: 1px solid var(--border);
+}
+
+.ticket-card h3 {
+    margin-bottom: 0.3rem;
+    font-size: 1rem;
+}
+
+.ticket-card p {
+    margin-bottom: 0.4rem;
+    font-size: 0.85rem;
+}
+
+.ticket-status {
+    font-size: 0.75rem;
+    color: var(--muted);
+}

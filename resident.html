@@ -50,6 +50,10 @@
                 <option value="wysoki">Wysoki</option>
             </select>
 
+            <!-- NOWE: ZAŁĄCZNIKI -->
+            <label class="pro-label">Załączniki (opcjonalnie):</label>
+            <input type="file" id="ticketFiles" multiple class="pro-input">
+
             <button class="uh-btn uh-btn-gold pro-btn">Wyślij zgłoszenie</button>
         </form>
     </section>
@@ -77,7 +81,6 @@ document.getElementById("logoutBtn").onclick = () => {
 async function loadResidentInfo() {
     const userId = localStorage.getItem("uh_user_id");
 
-    // Pobranie danych użytkownika
     const { data: userData, error: userError } = await client
         .from("users")
         .select("login, wspolnota")
@@ -91,7 +94,6 @@ async function loadResidentInfo() {
         return;
     }
 
-    // Pobranie nazwy wspólnoty
     const { data: wspolnotaData, error: wspError } = await client
         .from("communities")
         .select("name")
@@ -113,7 +115,7 @@ async function loadResidentInfo() {
 }
 
 /* ---------------------------------------------
-   WYSYŁANIE ZGŁOSZENIA
+   WYSYŁANIE ZGŁOSZENIA + UPLOAD PLIKÓW
 --------------------------------------------- */
 document.getElementById("ticketForm").addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -124,7 +126,8 @@ document.getElementById("ticketForm").addEventListener("submit", async (e) => {
     const description = ticketDescription.value.trim();
     const priority = ticketPriority.value;
 
-    const { error } = await client
+    // 1. Tworzymy zgłoszenie i pobieramy jego ID
+    const { data: ticketData, error: ticketError } = await client
         .from("tickets")
         .insert({
             user_id: userId,
@@ -132,17 +135,49 @@ document.getElementById("ticketForm").addEventListener("submit", async (e) => {
             description,
             priority,
             status: "nowe"
-        });
+        })
+        .select()
+        .single();
 
-    if (error) {
+    if (ticketError) {
         alert("Nie udało się wysłać zgłoszenia.");
-        console.error(error);
+        console.error(ticketError);
         return;
     }
 
+    const ticketId = ticketData.id;
+
+    // 2. Upload plików
+    const files = document.getElementById("ticketFiles").files;
+
+    for (const file of files) {
+        const path = `${ticketId}/${file.name}`;
+
+        const { error: uploadError } = await client.storage
+            .from("tickets-files")
+            .upload(path, file);
+
+        if (uploadError) {
+            console.error("Błąd uploadu:", uploadError);
+            continue;
+        }
+
+        const publicUrl = client.storage
+            .from("tickets-files")
+            .getPublicUrl(path).data.publicUrl;
+
+        await client.from("tickets_files").insert({
+            ticket_id: ticketId,
+            file_url: publicUrl,
+            file_name: file.name
+        });
+    }
+
+    // 3. Reset formularza
     ticketTitle.value = "";
     ticketDescription.value = "";
     ticketPriority.value = "niski";
+    document.getElementById("ticketFiles").value = "";
 
     loadMyTickets();
 });

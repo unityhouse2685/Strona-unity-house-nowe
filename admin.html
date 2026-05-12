@@ -58,6 +58,21 @@
     filter: grayscale(100%);
     pointer-events: none;
 }
+
+/* Miniatury załączników */
+.ticket-files img {
+    width: 120px;
+    height: auto;
+    margin: 6px 6px 0 0;
+    border-radius: 6px;
+}
+
+.ticket-files a {
+    display: block;
+    margin-top: 4px;
+    color: #d4af37;
+    text-decoration: none;
+}
 </style>
 
 <script defer>
@@ -74,8 +89,6 @@ document.getElementById("logoutBtn").onclick = () => {
    ŁADOWANIE WSPÓLNOT
 --------------------------------------------- */
 async function loadCommunities() {
-    console.log("Ładowanie wspólnot...");
-
     const { data, error } = await client
         .from("communities")
         .select("*")
@@ -119,7 +132,7 @@ document.getElementById("addCommunityBtn").onclick = async () => {
 };
 
 /* ---------------------------------------------
-   ŁADOWANIE ZGŁOSZEŃ
+   ŁADOWANIE ZGŁOSZEŃ + ZAŁĄCZNIKÓW
 --------------------------------------------- */
 async function loadTickets() {
     const { data, error } = await client
@@ -149,7 +162,26 @@ async function loadTickets() {
         return;
     }
 
-    data.forEach(t => {
+    for (const t of data) {
+
+        /* Pobieramy załączniki */
+        const { data: files } = await client
+            .from("tickets_files")
+            .select("*")
+            .eq("ticket_id", t.id);
+
+        let filesHtml = "";
+
+        if (files && files.length) {
+            files.forEach(f => {
+                if (f.file_url.match(/\.(jpg|jpeg|png|gif)$/i)) {
+                    filesHtml += `<img src="${f.file_url}">`;
+                } else {
+                    filesHtml += `<a href="${f.file_url}" target="_blank">${f.file_name}</a>`;
+                }
+            });
+        }
+
         const div = document.createElement("div");
         div.className = "ticket-card pro-ticket-card" + (t.status === "zakończone" ? " completed" : "");
 
@@ -159,6 +191,8 @@ async function loadTickets() {
 
             <p><strong>Mieszkaniec:</strong> ${t.users?.login ?? "nieznany"}</p>
             <p><strong>Wspólnota:</strong> ${t.users?.wspolnota ?? "nieznana"}</p>
+
+            <div class="ticket-files">${filesHtml}</div>
 
             <span class="ticket-status pro-status">Status: ${t.status}</span>
             <span class="ticket-priority pro-priority">Priorytet: ${t.priority}</span>
@@ -180,7 +214,7 @@ async function loadTickets() {
         }
 
         container.appendChild(div);
-    });
+    }
 }
 
 /* ---------------------------------------------

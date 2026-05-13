@@ -160,7 +160,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         auth_id: authId,
                         login: email,
                         password: password,
-                        community_id: wspolnota,
+                        wspolnota: wspolnota,
                         role: "resident",
                         approved: false
                     }

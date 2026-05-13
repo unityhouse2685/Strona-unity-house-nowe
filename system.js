@@ -123,77 +123,86 @@ function logout() {
 // -----------------------------------------
 // REJESTRACJA — SUPABASE AUTH
 // -----------------------------------------
-registerForm.addEventListener("submit", async (e) => {
-    e.preventDefault();
+// -----------------------------------------
+// REJESTRACJA — SUPABASE AUTH (POPRAWIONA)
+// -----------------------------------------
 
-    const button = registerForm.querySelector("button");
-    button.disabled = true;
-    button.textContent = "Tworzenie konta…";
+document.addEventListener("DOMContentLoaded", () => {
+    const registerForm = document.getElementById("registerForm");
 
-    const email = document.getElementById("emailInput").value.trim();
-    const password = document.getElementById("passwordInput").value.trim();
-    const wspolnota = document.getElementById("communitySelect").value;
+    if (!registerForm) return;
 
-    if (!email || !password || !wspolnota) {
-        alert("Uzupełnij wszystkie pola.");
-        button.disabled = false;
-        button.textContent = "Utwórz konto";
-        return;
-    }
+    registerForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
 
-    try {
-        // 1) Rejestracja w Auth
-        const { data: authData, error: authError } = await client.auth.signUp({
-            email,
-            password
-        });
+        const button = registerForm.querySelector("button");
+        button.disabled = true;
+        button.textContent = "Tworzenie konta…";
 
-        if (authError) {
-            console.error("Błąd Auth:", authError);
+        const email = document.getElementById("emailInput").value.trim();
+        const password = document.getElementById("passwordInput").value.trim();
+        const wspolnota = document.getElementById("communitySelect").value;
 
-            if (authError.message?.includes("rate limit")) {
-                alert("Zbyt wiele prób. Odczekaj minutę i spróbuj ponownie.");
-            } else {
-                alert("Nie udało się utworzyć konta.");
+        if (!email || !password || !wspolnota) {
+            alert("Uzupełnij wszystkie pola.");
+            button.disabled = false;
+            button.textContent = "Utwórz konto";
+            return;
+        }
+
+        try {
+            const { data: authData, error: authError } = await client.auth.signUp({
+                email,
+                password
+            });
+
+            if (authError) {
+                console.error("Błąd Auth:", authError);
+
+                if (authError.message?.includes("rate limit")) {
+                    alert("Zbyt wiele prób. Odczekaj minutę i spróbuj ponownie.");
+                } else {
+                    alert("Nie udało się utworzyć konta.");
+                }
+
+                button.disabled = false;
+                button.textContent = "Utwórz konto";
+                return;
             }
 
+            const authId = authData.user.id;
+
+            const { error: insertError } = await client
+                .from("users")
+                .insert([
+                    {
+                        auth_id: authId,
+                        login: email,
+                        password: password,
+                        wspolnota: wspolnota,
+                        role: "resident",
+                        approved: false
+                    }
+                ]);
+
+            if (insertError) {
+                console.error("Błąd rejestracji:", insertError);
+                alert("Nie udało się utworzyć konta.");
+                button.disabled = false;
+                button.textContent = "Utwórz konto";
+                return;
+            }
+
+            alert("Konto zostało utworzone. Administrator musi je zatwierdzić.");
+            window.location.href = "login.html";
+
+        } catch (err) {
+            console.error("Nieoczekiwany błąd:", err);
+            alert("Wystąpił błąd. Spróbuj ponownie za chwilę.");
             button.disabled = false;
             button.textContent = "Utwórz konto";
-            return;
         }
-
-        const authId = authData.user.id;
-
-        // 2) Zapis do tabeli users
-        const { error: insertError } = await client
-            .from("users")
-            .insert([
-                {
-                    auth_id: authId,
-                    login: email,
-                    password: password,
-                    wspolnota: wspolnota,
-                    role: "resident",
-                    approved: false
-                }
-            ]);
-
-        if (insertError) {
-            console.error("Błąd rejestracji:", insertError);
-            alert("Nie udało się utworzyć konta.");
-            button.disabled = false;
-            button.textContent = "Utwórz konto";
-            return;
-        }
-
-        alert("Konto zostało utworzone. Administrator musi je zatwierdzić.");
-        window.location.href = "login.html";
-
-    } catch (err) {
-        console.error("Nieoczekiwany błąd:", err);
-        alert("Wystąpił błąd. Spróbuj ponownie za chwilę.");
-        button.disabled = false;
-        button.textContent = "Utwórz konto";
-    }
+    });
 });
+
 

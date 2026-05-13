@@ -3,7 +3,7 @@ console.log("SYSTEM.JS DZIAŁA");
 // ------------------------------------------------------
 // KONFIGURACJA SUPABASE
 // ------------------------------------------------------
-const SUPABASE_URL = "https://xwijsqbomwvye xrikxam.supabase.co"; 
+const SUPABASE_URL = "https://xwijsqbomwvyexrikxam.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh3aWpzcWJvbXd2eWV4cmlreGFtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg2NTYzNDMsImV4cCI6MjA5NDIzMjM0M30.k4MhZ6vuW7z_SkPQITGGt938PW8eP9eBmTjmTIv0kWA";
 
 const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);

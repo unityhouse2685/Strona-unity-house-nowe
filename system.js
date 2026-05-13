@@ -42,59 +42,54 @@ async function loadCommunitiesForRegister() {
 document.addEventListener("DOMContentLoaded", loadCommunitiesForRegister);
 
 // -----------------------------------------
-// LOGOWANIE — SUPABASE AUTH
+// LOGOWANIE — SUPABASE AUTH (NOWE)
 // -----------------------------------------
 
 document.addEventListener("DOMContentLoaded", () => {
     const loginForm = document.getElementById("loginForm");
 
-    if (loginForm) {
-        loginForm.addEventListener("submit", async (e) => {
-            e.preventDefault();
+    if (!loginForm) return;
 
-            const email = document.getElementById("loginEmail").value.trim();
-            const password = document.getElementById("loginPassword").value.trim();
+    loginForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
 
-            if (!email || !password) {
-                alert("Wpisz email i hasło.");
-                return;
-            }
+        const email = document.getElementById("loginEmail").value.trim();
+        const password = document.getElementById("loginPassword").value.trim();
 
-            const { data: authData, error: authError } = await client.auth.signInWithPassword({
-                email,
-                password
-            });
+        if (!email || !password) {
+            alert("Wpisz email i hasło.");
+            return;
+        }
 
-            if (authError) {
-                alert("Niepoprawny email lub hasło.");
-                console.error(authError);
-                return;
-            }
-
-            const authId = authData.user.id;
-
-            const { data: userData, error: userError } = await client
-                .from("users")
-                .select("*")
-                .eq("auth_id", authId)
-                .eq("approved", true)
-                .single();
-
-            if (userError || !userData) {
-                alert("Konto nie zostało zatwierdzone przez administratora.");
-                return;
-            }
-
-            localStorage.setItem("uh_user_id", userData.id);
-            localStorage.setItem("uh_user_role", userData.role);
-
-            if (userData.role === "admin") {
-                window.location.href = "admin.html";
-            } else {
-                window.location.href = "resident.html";
-            }
+        const { data: authData, error: authError } = await client.auth.signInWithPassword({
+            email,
+            password
         });
-    }
+
+        if (authError) {
+            alert("Niepoprawny email lub hasło.");
+            console.error(authError);
+            return;
+        }
+
+        const userId = authData.user.id;
+
+        const { data: profile, error: profileError } = await client
+            .from("users")
+            .select("*")
+            .eq("id", userId)
+            .single();
+
+        if (profileError || !profile) {
+            alert("Brak profilu użytkownika.");
+            return;
+        }
+
+        localStorage.setItem("uh_user_id", profile.id);
+        localStorage.setItem("uh_user_role", "resident");
+
+        window.location.href = "resident.html";
+    });
 });
 
 // -----------------------------------------
@@ -121,10 +116,7 @@ function logout() {
 }
 
 // -----------------------------------------
-// REJESTRACJA — SUPABASE AUTH
-// -----------------------------------------
-// -----------------------------------------
-// REJESTRACJA — SUPABASE AUTH (POPRAWIONA)
+// REJESTRACJA — SUPABASE AUTH (NOWA WERSJA)
 // -----------------------------------------
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -151,6 +143,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         try {
+            // 1. Tworzymy konto w Auth
             const { data: authData, error: authError } = await client.auth.signUp({
                 email,
                 password
@@ -158,13 +151,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             if (authError) {
                 console.error("Błąd Auth:", authError);
-
-                if (authError.message?.includes("rate limit")) {
-                    alert("Zbyt wiele prób. Odczekaj minutę i spróbuj ponownie.");
-                } else {
-                    alert("Nie udało się utworzyć konta.");
-                }
-
+                alert("Nie udało się utworzyć konta.");
                 button.disabled = false;
                 button.textContent = "Utwórz konto";
                 return;
@@ -172,28 +159,24 @@ document.addEventListener("DOMContentLoaded", () => {
 
             const authId = authData.user.id;
 
+            // 2. Dopisujemy profil do tabeli users
             const { error: insertError } = await client
                 .from("users")
-                .insert([
-                    {
-                        auth_id: authId,
-                        login: email,
-                        password: password,
-                        wspolnota: wspolnota,
-                        role: "resident",
-                        approved: false
-                    }
-                ]);
+                .insert({
+                    id: authId,
+                    email: email,
+                    community_id: wspolnota
+                });
 
             if (insertError) {
-                console.error("Błąd rejestracji:", insertError);
-                alert("Nie udało się utworzyć konta.");
+                console.error("Błąd dopisywania profilu:", insertError);
+                alert("Konto utworzone, ale nie udało się zapisać profilu.");
                 button.disabled = false;
                 button.textContent = "Utwórz konto";
                 return;
             }
 
-            alert("Konto zostało utworzone. Administrator musi je zatwierdzić.");
+            alert("Konto zostało utworzone!");
             window.location.href = "login.html";
 
         } catch (err) {
@@ -204,5 +187,3 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 });
-
-
